@@ -17,30 +17,6 @@
 
 import itertools
 
-def longest_subpalindrome_slice_slow(text):
-    "Return (i, j) such that text[i:j] is the longest palindrome in text."
-    ret = (0, 0)
-    k = 0
-    _text = text.lower()
-    for i in _text:
-        num = _text[k:].count(i)    # count chars from this pos to the end (at least 1 is found)
-        j = num-1
-        start = k
-        indexes = [ind + start for ind in get_indices(_text[start:], i)]
-        
-        while j > 0:              # can only be palindrome if letter occurs more than once
-            _next = indexes[j]
-            
-            if check_palindrome(_text[start:_next+1]):  # check if this substring is a palindrome
-                if (ret[1]-ret[0] < _next-start):
-                    ret = (start, _next+1) 
-                    break
-            j -= 1
-        k += 1
-        
-    return ret
-
-
 def longest_subpalindrome_slice(text):
     _text = text.lower()
     
@@ -115,6 +91,29 @@ def grow(text, start, end):
         start -= 1; end += 1
     return(start, end)
 
+
+def longest_subpalindrome_slice_slow(text):
+    "Return (i, j) such that text[i:j] is the longest palindrome in text."
+    ret = (0, 0)
+    k = 0
+    _text = text.lower()
+    for i in _text:
+        num = _text[k:].count(i)    # count chars from this pos to the end (at least 1 is found)
+        j = num-1
+        start = k
+        indexes = [ind + start for ind in get_indices(_text[start:], i)]
+        
+        while j > 0:              # can only be palindrome if letter occurs more than once
+            _next = indexes[j]
+            
+            if check_palindrome(_text[start:_next+1]):  # check if this substring is a palindrome
+                if (ret[1]-ret[0] < _next-start):
+                    ret = (start, _next+1) 
+                    break
+            j -= 1
+        k += 1
+        
+    return ret
 
 ########## TESTS #######
 def test1():
