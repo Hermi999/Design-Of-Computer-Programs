@@ -25,8 +25,6 @@ def n_ary(f):
         return x if not args else f(x, n_ary_f(*args))
     return n_ary_f
 
-@n_ary      # DECORATOR --> the same as seq = n_ary(seq)
-def seq(x, y): return ('req', x, y)
 
 def lit(s):         
     set_s = set([s]) 
@@ -37,7 +35,8 @@ def plus(x):        return lambda Ns: genseq(x, star(x), Ns, startx=1) #Tricky
 def oneof(chars):   
     set_chars = set(chars)
     return lambda Ns: set_chars if 1 in Ns else null
-#def seq(x, y):      return lambda Ns: genseq(x, y, Ns)
+@n_ary      # DECORATOR --> the same as seq = n_ary(seq)
+def seq(x, y):      return lambda Ns: genseq(x, y, Ns)
 def opt(x):         return alt(epsilon, x)
 dot = oneof('?')    # You could expand the alphabet to more chars.
 epsilon = lit('')   # The pattern that matches the empty string.
@@ -89,6 +88,8 @@ def test_genseq():
             set(['aaaa', 'aaab', 'aaac', 'aabb', 'aabc', 'aacc', 'abbb', 
                  'abbc', 'abcc', 'accc', 'bbbb', 'bbbc', 'bbcc', 'bccc', 'cccc']))
     assert(seq(plus(a), seq(plus(b), plus(c)))(set([5])) ==
+           set(['aaabc', 'aabbc', 'aabcc', 'abbbc', 'abbcc', 'abccc']))
+    assert(seq(plus(a), plus(b), plus(c))(set([5])) ==
            set(['aaabc', 'aabbc', 'aabcc', 'abbbc', 'abbcc', 'abccc']))
     assert(seq(oneof('bcfhrsm'),lit('at'))(N(3)) ==
            set(['bat', 'cat', 'fat', 'hat', 'mat', 'rat', 'sat']))
