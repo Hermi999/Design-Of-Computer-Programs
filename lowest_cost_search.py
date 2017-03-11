@@ -113,28 +113,6 @@ def action_cost(action):
     return max(a, b)
 
 
-#def bridge_problem2(here):
-#    Fail = []
-#    here = frozenset(here) | frozenset(['light'])
-#    explored = set() # set of states we have visited
-#    # State will be a (peoplelight_here, peoplelight_there) tuple
-#    # E.g. ({1, 2, 5, 10, 'light'}, {})
-#    frontier = [ [(here, frozenset())] ] # ordered list of paths we have blazed
-#    while frontier:
-#        path = frontier.pop(0)
-#        here1, there1 = state1 = final_state(path)
-#        if not here1 or (len(here1)==1 and 'light' in here1):  
-#            return path
-#        explored.add(state1)
-#        pcost = path_cost(path)
-#        for (state, action) in bsuccessors2(state1).items():
-#            if state not in explored:
-#                total_cost = pcost + bcost(action)
-#                path2 = path + [(action, total_cost), state]
-#                add_to_frontier(frontier, path2)
-#    return Fail
-
-
 
 def test():
     here = [1, 2, 5, 10]
