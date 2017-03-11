@@ -19,7 +19,7 @@ path            list of [state, (action, t), state, (action,t ), ... ]
                     with t...total time elapsed
 successor       dictionary of {state:action} pairs
 """
-import doctest, cProfile
+import cProfile
 
 def bsuccessors2(state):
     """Return a dict of {state:action} pairs. A state is a
@@ -82,6 +82,7 @@ def bridge_problem(here):
                 path2 = path + [(action, total_cost), state]
                 add_to_frontier(frontier, path2)
     return Fail
+Fail = []
 
 def final_state(path): return path[-1]
 
