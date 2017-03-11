@@ -18,7 +18,7 @@ action          (person1, person2, arraw)  arrow = "<-" or "->"
 path            list of [state, action, state, action, ... ]
 successor       dictionary of {state:action} pairs
 """
-import doctest
+import doctest, cProfile
 
 def bsuccessors(state):
     """Return a dict of {state:action} pairs. A state is a (here, there, t) tuple,
@@ -29,10 +29,10 @@ def bsuccessors(state):
     as person1."""
     here, there, t = state
     if 'light' in here:   
-        return dict(((here  - frozenset([a, b, 'light']),
-                      there | frozenset([a, b, 'light']),
-                      t + max(a, b)),
-                      (a, b, '->'))
+        return dict(((here  - frozenset([a, b, 'light']),   # state
+                      there | frozenset([a, b, 'light']),   # state
+                      t + max(a, b)),                       # action
+                      (a, b, '->'))                         # action
                      for a in here if a is not 'light'
                      for b in here if b is not 'light')
     else:
@@ -62,6 +62,8 @@ def bridge_problem(here):
     # E.g. ({1, 2, 5, 10, 'light'}, {}, 0)
     frontier = [ [(here, frozenset(), 0)] ] # ordered list of paths we have blazed
     while frontier:
+        # Always take the shortest path, no matter how many actions it already has
+        frontier.sort(key=elapsed_time)
         path = frontier.pop(0)
         here1, there1, t1 = state1 = path[-1]
         if not here1 or here1 == set(['light']):  ## That is, nobody left here
@@ -74,8 +76,9 @@ def bridge_problem(here):
                 path2 = path + [action, state]
                 # Don't check for solution when we extend a path
                 frontier.append(path2)
-                frontier.sort(key=elapsed_time)
     return []
+
+cProfile.run("print(path_states(bridge_problem([4,3,7,5])))")
 
 def test():
     assert bridge_problem(frozenset((1, 2),))[-1][-1] == 2 # the [-1][-1] grabs the total elapsed time
@@ -165,4 +168,4 @@ True
 [(2, 0, '->'), (0, 0, '<-'), (6, 9, '->'), (2, 2, '<-'), (2, 0, '->'), (0, 0, '<-'), (4, 0, '->')]
 """
 
-print(doctest.testmod())
+#print(doctest.testmod())
