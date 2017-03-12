@@ -87,23 +87,31 @@ def always_roll(state):
 def always_hold(state):
     return 'hold'
 
-def play_pig(A, B):
+def dierolls():
+    """Iterator which generates an infinite number of die rolls.
+    This generator is passed to play_bip as argument. In this way it is 
+    possible to create tests where the dierolls are not random, but exactly
+    defined. -> DEPENDENCY INJECTION"""
+    while True:
+        yield random.randint(1,6)
+
+def play_pig(A, B, dierolls=dierolls()):
     """Play a game of pig between two players, represented by their strategies.
     Each time through the main loop we ask the current player for one decision,
     which must be 'hold' or 'roll', and we update the state accordingly.
     When one player's score exceeds the goal, return that player."""
+    strategies = [A, B]
     state = (0, 0, 0, 0)
-    (p, me, you, pending) = state
-    while me < goal and you < goal:
-        action = A(state) if p == 0 else B(state)
-        
-        if action == "hold":
-            (p,me,you,pending) = hold((p,me,you,pending))
+    while True:
+        (p, me, you, pending) = state
+        if me >= goal:
+            return strategies[p]
+        elif you >= goal:
+            return strategies[other[p]]
+        elif strategies[p](state) == 'hold':
+            state = hold(state)
         else:
-            die = random.randint(1, 6)
-            (p,me,you,pending) = roll((p,me,you,pending), die)
-    
-    return A if p == 1 else B
+            state = roll(state, next(dierolls))
     
 
 def test():    
@@ -119,6 +127,11 @@ def test():
     for _ in range(10):
         winner = play_pig(always_hold, always_roll)
         assert winner.__name__ == 'always_roll'
+    
+    A, B = hold_at(50), clueless
+    rolls = iter([6,6,6,6,6,6,6,6,2]) # <-- Your rolls here
+    assert play_pig(A, B, rolls) == A
+    
     return 'tests pass'
 
 print(test())
