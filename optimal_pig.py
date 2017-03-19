@@ -8,6 +8,7 @@ other = {1:0, 0:1}  # mapping from player to other player
 goal = 40
 
 from functools import update_wrapper
+import random
 
 def decorator(d):
     "Make function d a decorator: d wraps a function fn."
@@ -48,6 +49,15 @@ def roll(state, d):
     else:
         return (other[p], you, me+1, 0)     # pig out
 
+def dierolls():
+    """Iterator which generates an infinite number of die rolls.
+    This generator is passed to play_bip as argument. In this way it is 
+    possible to create tests where the dierolls are not random, but exactly
+    defined. -> DEPENDENCY INJECTION"""
+    while True:
+        yield random.randint(1,6)
+        
+
 
 def Q_pig(state, action, Pwin):
     "The expected value of choosing action in state"
@@ -63,7 +73,13 @@ def pig_actions(state):
     "The legal actions from a state."
     _, _, _, pending = state
     return ["roll", "hold"] if pending else ["roll"]
+    
+def best_action(state, actions, Q, U):
+    "Return the optimal action for a state, given U."
+    def EU(action): return Q(state, action, U)
+    return max(actions(state), key=EU)
 
+" OPTIMAL STRATEGY = Propapilitly of winning "
 @memo
 def Pwin(state):
     """ The utility of a state; here just the propapility that an optimal player
@@ -76,19 +92,67 @@ def Pwin(state):
         return 0
     else:
         return max(Q_pig(state, action, Pwin) for action in pig_actions(state))
-    
-def best_action(state, actions, Q, U):
-    "Return the optimal action for a state, given U."
-    def EU(action): return Q(state, action, U)
-    return max(actions(state), key=EU)
+
+" STRATEGY TO OPTIMIZE THE EXPECTED DIFFERENCE IN THE FINAL SCORE "
+@memo
+def win_diff(state):
+    "The utility of a state: here the winning differential (pos or neg)."
+    (p, me, you, pending) = state
+    if me + pending >= goal or you >= goal:     # if a player reached the goal
+        return (me + pending - you)
+    else:
+        return max(Q_pig(state, action, win_diff)
+                   for action in pig_actions(state))
 
 
+" FUNCTIONS TO EXECUTE CERTAIN STRATEGIES FOR GIVEN STATES "
 def max_wins(state):
     "The optimal pig strategy chooses an action with the highest win probability."
     return best_action(state, pig_actions, Q_pig, Pwin)
 
+def max_diffs(state):
+    """A strategy that maximizes the expected difference between my final score
+    and my opponent's."""
+    return best_action(state, pig_actions, Q_pig, win_diff)
+
+def bad_strategy(state):
+    "A strategy that could never win, unless a player makes an illegal move"
+    return 'hold'
+
+def illegal_strategy(state):
+    return 'I want to win pig please.'
+
+
+def play_pig(A, B, dierolls=dierolls()):
+    """Play a game of pig between two players, represented by their strategies.
+    Each time through the main loop we ask the current player for one decision,
+    which must be 'hold' or 'roll', and we update the state accordingly.
+    When one player's score exceeds the goal, return that player."""
+    strategies = [A, B]
+    state = (0, 0, 0, 0)
+    
+    while True:
+        (p, me, you, pending) = state
+        if me >= goal:
+            return strategies[p]
+        elif you >= goal:
+            return strategies[other[p]]
+        else:
+            action = strategies[p](state)
+            
+            if action == "hold":
+                state = hold(state)
+            elif action == "roll":
+                state = roll(state, next(dierolls))
+            else: # illegal action! You lose!
+                state = (other[p], goal, me, 0)
+
+print(play_pig(bad_strategy, illegal_strategy).__name__)
 
 def test():
+    winner = play_pig(bad_strategy, illegal_strategy) 
+    assert winner.__name__ == 'bad_strategy'
+    
     assert(max_wins((1, 5, 34, 4)))   == "roll"
     assert(max_wins((1, 18, 27, 8)))  == "roll"
     assert(max_wins((0, 23, 8, 8)))   == "roll"
@@ -109,6 +173,23 @@ def test():
     assert(max_wins((0, 22, 4, 7)))   == "roll"
     assert(max_wins((1, 28, 3, 2)))   == "roll"
     assert(max_wins((0, 11, 0, 24)))  == "roll"
+    
+    # The first three test cases are examples where max_wins and
+    # max_diffs return the same action.
+    assert(max_diffs((1, 26, 21, 15))) == "hold"
+    assert(max_diffs((1, 23, 36, 7)))  == "roll"
+    assert(max_diffs((0, 29, 4, 3)))   == "roll"
+    # The remaining test cases are examples where max_wins and
+    # max_diffs return different actions.
+    assert(max_diffs((0, 36, 32, 5)))  == "roll"
+    assert(max_diffs((1, 37, 16, 3)))  == "roll"
+    assert(max_diffs((1, 33, 39, 7)))  == "roll"
+    assert(max_diffs((0, 7, 9, 18)))   == "hold"
+    assert(max_diffs((1, 0, 35, 35)))  == "hold"
+    assert(max_diffs((0, 36, 7, 4)))   == "roll"
+    assert(max_diffs((1, 5, 12, 21)))  == "hold"
+    assert(max_diffs((0, 3, 13, 27)))  == "hold"
+    assert(max_diffs((0, 0, 39, 37)))  == "hold"
     return 'tests pass'
 
 print(test())
