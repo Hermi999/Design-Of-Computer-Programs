@@ -31,6 +31,7 @@ def memo(f):
         except TypeError:
             # some element of args can't be a dict key
             return f(args)
+    _f.cache = cache
     return _f
 
 def hold(state):
@@ -81,7 +82,7 @@ def best_action(state, actions, Q, U):
 
 " OPTIMAL STRATEGY = Propapilitly of winning "
 @memo
-def Pwin(state):
+def Pwin_utiltiy(state):
     """ The utility of a state; here just the propapility that an optimal player
     whose turn it is to move can win from the current state. """
     # Assumes opponent also plays with optimal strategy
@@ -91,29 +92,29 @@ def Pwin(state):
     elif you >= goal:
         return 0
     else:
-        return max(Q_pig(state, action, Pwin) for action in pig_actions(state))
+        return max(Q_pig(state, action, Pwin_utiltiy) for action in pig_actions(state))
 
 " STRATEGY TO OPTIMIZE THE EXPECTED DIFFERENCE IN THE FINAL SCORE "
 @memo
-def win_diff(state):
+def win_diff_utility(state):
     "The utility of a state: here the winning differential (pos or neg)."
     (p, me, you, pending) = state
     if me + pending >= goal or you >= goal:     # if a player reached the goal
         return (me + pending - you)
     else:
-        return max(Q_pig(state, action, win_diff)
+        return max(Q_pig(state, action, win_diff_utility)
                    for action in pig_actions(state))
 
 
 " FUNCTIONS TO EXECUTE CERTAIN STRATEGIES FOR GIVEN STATES "
 def max_wins(state):
     "The optimal pig strategy chooses an action with the highest win probability."
-    return best_action(state, pig_actions, Q_pig, Pwin)
+    return best_action(state, pig_actions, Q_pig, Pwin_utiltiy)
 
 def max_diffs(state):
     """A strategy that maximizes the expected difference between my final score
     and my opponent's."""
-    return best_action(state, pig_actions, Q_pig, win_diff)
+    return best_action(state, pig_actions, Q_pig, win_diff_utility)
 
 def bad_strategy(state):
     "A strategy that could never win, unless a player makes an illegal move"
@@ -193,6 +194,15 @@ def test():
     return 'tests pass'
 
 print(test())
+
+
+
+
+
+
+
+
+
 
 
 
